@@ -1,5 +1,7 @@
 # SmartKitchen
 
+Languages: [English](README.md) | [Deutsch](README.de.md) | [Русский](README.ru.md) | [中文](README.zh-CN.md)
+
 SmartKitchen is a full-stack .NET 8 application for running core kitchen workflows in one place. It combines recipe management, ingredient and inventory tracking, weekly meal planning, shopping list generation, and order handling behind a Blazor Server UI and an ASP.NET Core Web API.
 
 The repository is organized as a layered solution with separate projects for the frontend, API, domain model, and infrastructure. The current UI language is German.
