@@ -1,0 +1,167 @@
+﻿@page "/ingredients"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<div class="sk-page-header">
+    <div>
+        <h2 class="sk-page-title">🥕 Zutaten</h2>
+        <p class="sk-page-subtitle">Alle verfügbaren Zutaten verwalten</p>
+    </div>
+    <button class="sk-btn sk-btn-primary" @onclick="ShowAddModal">+ Neue Zutat</button>
+</div>
+
+@if (ingredients == null)
+{
+    <div class="sk-loading"><div class="sk-spinner"></div> Zutaten werden geladen...</div>
+}
+else
+{
+    <div class="sk-card">
+        <table class="sk-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Einheit</th>
+                    <th>Kategorie</th>
+                    <th>Preis/Einheit</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ing in ingredients)
+                {
+                    <tr>
+                        <td style="font-weight:600; color:var(--text-primary)">@ing.Name</td>
+                        <td>@ing.Unit</td>
+                        <td><span class="sk-badge sk-badge-blue">@ing.Category</span></td>
+                        <td style="font-weight:500">@ing.PricePerUnit.ToString("N3") €</td>
+                        <td style="text-align:right">
+                            <button class="sk-btn-icon" title="Bearbeiten" @onclick="() => EditIngredient(ing)">✏️</button>
+                            <button class="sk-btn-icon" title="Löschen" @onclick="() => DeleteIngredient(ing.Id)">🗑️</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (showForm)
+{
+    <div class="sk-modal-backdrop" @onclick="CloseForm">
+        <div class="sk-modal" style="max-width:450px" @onclick:stopPropagation>
+            <div class="sk-modal-header">
+                <span class="sk-modal-title">@(editId == 0 ? "Neue Zutat" : "Zutat bearbeiten")</span>
+                <button class="sk-btn-icon" @onclick="CloseForm">✕</button>
+            </div>
+            <div class="sk-modal-body">
+                <div class="sk-form-group">
+                    <label class="sk-label">Name</label>
+                    <input class="sk-input" @bind="formName" placeholder="z.B. Tomaten" />
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Einheit</label>
+                    <select class="sk-select" @bind="formUnit">
+                        <option>g</option>
+                        <option>ml</option>
+                        <option>Stück</option>
+                        <option>Zehe</option>
+                        <option>TL</option>
+                        <option>EL</option>
+                        <option>Prise</option>
+                    </select>
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Kategorie</label>
+                    <select class="sk-select" @bind="formCategory">
+                        <option>Gemüse</option>
+                        <option>Fleisch</option>
+                        <option>Fisch</option>
+                        <option>Milchprodukte</option>
+                        <option>Getreide</option>
+                        <option>Nudeln</option>
+                        <option>Gewürze</option>
+                        <option>Öle</option>
+                        <option>Soßen</option>
+                        <option>Käse</option>
+                        <option>Backen</option>
+                        <option>Sonstiges</option>
+                    </select>
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Preis pro Einheit (€)</label>
+                    <input class="sk-input" type="number" step="0.001" @bind="formPrice" />
+                </div>
+            </div>
+            <div class="sk-modal-footer">
+                <button class="sk-btn sk-btn-outline" @onclick="CloseForm">Abbrechen</button>
+                <button class="sk-btn sk-btn-primary" @onclick="SaveIngredient">Speichern</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<IngredientDto>? ingredients;
+    private bool showForm;
+    private int editId;
+    private string formName = "", formUnit = "g", formCategory = "Gemüse";
+    private decimal formPrice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            ingredients = await Http.GetFromJsonAsync<List<IngredientDto>>("api/ingredients") ?? new();
+        }
+        catch
+        {
+            ingredients = new();
+        }
+    }
+
+    private void ShowAddModal()
+    {
+        editId = 0; formName = ""; formUnit = "g"; formCategory = "Gemüse"; formPrice = 0;
+        showForm = true;
+    }
+
+    private void EditIngredient(IngredientDto ing)
+    {
+        editId = ing.Id; formName = ing.Name; formUnit = ing.Unit; formCategory = ing.Category; formPrice = ing.PricePerUnit;
+        showForm = true;
+    }
+
+    private async Task SaveIngredient()
+    {
+        var data = new { name = formName, unit = formUnit, category = formCategory, pricePerUnit = formPrice };
+        if (editId == 0)
+            await Http.PostAsJsonAsync("api/ingredients", data);
+        else
+            await Http.PutAsJsonAsync($"api/ingredients/{editId}", data);
+        showForm = false;
+        await LoadData();
+    }
+
+    private async Task DeleteIngredient(int id)
+    {
+        await Http.DeleteAsync($"api/ingredients/{id}");
+        await LoadData();
+    }
+
+    private void CloseForm() { showForm = false; }
+
+    public class IngredientDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Unit { get; set; } = "";
+        public string Category { get; set; } = "";
+        public decimal PricePerUnit { get; set; }
+    }
+}

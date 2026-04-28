@@ -1,0 +1,138 @@
+﻿@page "/shopping"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<div class="sk-page-header">
+    <div>
+        <h2 class="sk-page-title">🛒 Einkaufsliste</h2>
+        <p class="sk-page-subtitle">Was du noch einkaufen musst</p>
+    </div>
+    <div style="display:flex; gap:0.5rem">
+        <button class="sk-btn sk-btn-primary" @onclick="GenerateFromMealPlan">🔄 Aus Wochenplan generieren</button>
+        <button class="sk-btn sk-btn-danger sk-btn-sm" @onclick="ClearChecked">Erledigte entfernen</button>
+    </div>
+</div>
+
+@if (items == null)
+{
+    <div class="sk-loading"><div class="sk-spinner"></div> Einkaufsliste wird geladen...</div>
+}
+else if (items.Count == 0)
+{
+    <div class="sk-card">
+        <div class="sk-empty">
+            <div class="sk-empty-icon">🛒</div>
+            <p>Deine Einkaufsliste ist leer</p>
+            <button class="sk-btn sk-btn-primary" style="margin-top:1rem" @onclick="GenerateFromMealPlan">Aus Wochenplan generieren</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="sk-grid sk-grid-2">
+        @foreach (var group in items.GroupBy(i => i.Ingredient?.Category ?? "Sonstiges").OrderBy(g => g.Key))
+        {
+            <div class="sk-card">
+                <div class="sk-card-header">
+                    <span class="sk-card-title">@GetCategoryEmoji(group.Key) @group.Key</span>
+                    <span class="sk-badge sk-badge-gray">@group.Count(i => !i.IsChecked) offen</span>
+                </div>
+                @foreach (var item in group)
+                {
+                    var checkedCss = item.IsChecked ? "sk-checked" : "";
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:0.5rem 0; border-bottom:1px solid var(--border-subtle)">
+                        <label class="sk-checkbox" @onclick="() => ToggleItem(item.Id)">
+                            <input type="checkbox" checked="@item.IsChecked" @onclick:preventDefault />
+                            <span class="@checkedCss">@item.Ingredient?.Name</span>
+                        </label>
+                        <div style="display:flex; align-items:center; gap:0.5rem">
+                            <span style="color:var(--text-secondary); font-size:0.85rem">@item.Amount @item.Ingredient?.Unit</span>
+                            <button class="sk-btn-icon" @onclick="() => DeleteItem(item.Id)">✕</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div style="margin-top:1.5rem; text-align:center; color:var(--text-muted); font-size:0.9rem;">
+        @items.Count(i => i.IsChecked) von @items.Count erledigt
+    </div>
+}
+
+@code {
+    private List<ShoppingDto>? items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            items = await Http.GetFromJsonAsync<List<ShoppingDto>>("api/shoppinglist") ?? new();
+        }
+        catch
+        {
+            items = new();
+        }
+    }
+
+    private async Task ToggleItem(int id)
+    {
+        await Http.PutAsync($"api/shoppinglist/{id}/toggle", null);
+        await LoadData();
+    }
+
+    private async Task DeleteItem(int id)
+    {
+        await Http.DeleteAsync($"api/shoppinglist/{id}");
+        await LoadData();
+    }
+
+    private async Task GenerateFromMealPlan()
+    {
+        await Http.PostAsync("api/shoppinglist/generate-from-mealplan", null);
+        await LoadData();
+    }
+
+    private async Task ClearChecked()
+    {
+        await Http.DeleteAsync("api/shoppinglist/clear-checked");
+        await LoadData();
+    }
+
+    private string GetCategoryEmoji(string cat) => cat switch
+    {
+        "Fleisch" => "🥩",
+        "Fisch" => "🐟",
+        "Gemüse" => "🥦",
+        "Milchprodukte" => "🧈",
+        "Nudeln" => "🍝",
+        "Getreide" => "🌾",
+        "Gewürze" => "🧂",
+        "Öle" => "🫒",
+        "Soßen" => "🥫",
+        "Käse" => "🧀",
+        "Backen" => "🧁",
+        _ => "📦"
+    };
+
+    public class ShoppingDto
+    {
+        public int Id { get; set; }
+        public decimal Amount { get; set; }
+        public bool IsChecked { get; set; }
+        public IngDto? Ingredient { get; set; }
+    }
+
+    public class IngDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Unit { get; set; } = "";
+        public string Category { get; set; } = "";
+    }
+}

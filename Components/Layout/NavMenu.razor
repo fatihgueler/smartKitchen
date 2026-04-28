@@ -1,0 +1,82 @@
+﻿@inject NavigationManager Nav
+
+<header class="sk-navbar">
+    <div class="sk-navbar-inner">
+        <a href="" class="sk-navbar-brand">
+            <img src="logo.svg" alt="SmartKitchen" class="sk-brand-logo" />
+            <span class="sk-brand-name">Smart<span class="sk-brand-accent">Kitchen</span></span>
+        </a>
+
+        <nav class="sk-navbar-links">
+            <NavLink class="sk-nav-item" href="" Match="NavLinkMatch.All">
+                <span class="sk-nav-emoji">📊</span>
+                <span>Dashboard</span>
+            </NavLink>
+            <NavLink class="sk-nav-item" href="recipes">
+                <span class="sk-nav-emoji">📖</span>
+                <span>Rezepte</span>
+            </NavLink>
+            <NavLink class="sk-nav-item" href="mealplan">
+                <span class="sk-nav-emoji">📅</span>
+                <span>Wochenplan</span>
+            </NavLink>
+            <NavLink class="sk-nav-item" href="inventory">
+                <span class="sk-nav-emoji">📦</span>
+                <span>Inventar</span>
+            </NavLink>
+            <NavLink class="sk-nav-item" href="shopping">
+                <span class="sk-nav-emoji">🛒</span>
+                <span>Einkaufsliste</span>
+            </NavLink>
+            <NavLink class="sk-nav-item" href="ingredients">
+                <span class="sk-nav-emoji">🥕</span>
+                <span>Zutaten</span>
+            </NavLink>
+            <NavLink class="sk-nav-item" href="orders">
+                <span class="sk-nav-emoji">🧾</span>
+                <span>Bestellungen</span>
+            </NavLink>
+        </nav>
+
+        <button class="sk-mobile-toggle" @onclick="ToggleMenu">
+            <span class="sk-hamburger @(menuOpen ? "open" : "")">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+        </button>
+    </div>
+
+    @if (menuOpen)
+    {
+        <div class="sk-mobile-menu">
+            <NavLink class="sk-mobile-link" href="" Match="NavLinkMatch.All" @onclick="CloseMenu">
+                <span>📊</span> Dashboard
+            </NavLink>
+            <NavLink class="sk-mobile-link" href="recipes" @onclick="CloseMenu">
+                <span>📖</span> Rezepte
+            </NavLink>
+            <NavLink class="sk-mobile-link" href="mealplan" @onclick="CloseMenu">
+                <span>📅</span> Wochenplan
+            </NavLink>
+            <NavLink class="sk-mobile-link" href="inventory" @onclick="CloseMenu">
+                <span>📦</span> Inventar
+            </NavLink>
+            <NavLink class="sk-mobile-link" href="shopping" @onclick="CloseMenu">
+                <span>🛒</span> Einkaufsliste
+            </NavLink>
+            <NavLink class="sk-mobile-link" href="ingredients" @onclick="CloseMenu">
+                <span>🥕</span> Zutaten
+            </NavLink>
+            <NavLink class="sk-mobile-link" href="orders" @onclick="CloseMenu">
+                <span>🧾</span> Bestellungen
+            </NavLink>
+        </div>
+    }
+</header>
+
+@code {
+    private bool menuOpen;
+    private void ToggleMenu() { menuOpen = !menuOpen; }
+    private void CloseMenu() { menuOpen = false; }
+}

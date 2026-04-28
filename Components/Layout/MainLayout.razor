@@ -1,0 +1,23 @@
+﻿@inherits LayoutComponentBase
+
+<div class="sk-app">
+    <NavMenu />
+    <main class="sk-content">
+        <div class="sk-content-inner">
+            @Body
+        </div>
+    </main>
+    <footer class="sk-footer">
+        <div class="sk-footer-inner">
+            <span>© @DateTime.Now.Year SmartKitchen</span>
+            <span class="sk-footer-dot">·</span>
+            <span>Intelligente Küchenverwaltung</span>
+        </div>
+    </footer>
+</div>
+
+<div id="blazor-error-ui">
+    Ein unerwarteter Fehler ist aufgetreten.
+    <a href="" class="reload">Neu laden</a>
+    <a class="dismiss">🗙</a>
+</div>

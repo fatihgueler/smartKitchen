@@ -1,0 +1,314 @@
+﻿@page "/recipes"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<div class="sk-page-header">
+    <div>
+        <h2 class="sk-page-title">📖 Rezepte</h2>
+        <p class="sk-page-subtitle">Alle deine Rezepte auf einen Blick</p>
+    </div>
+    <button class="sk-btn sk-btn-primary" @onclick="ShowAddModal">+ Neues Rezept</button>
+</div>
+
+@if (recipes == null)
+{
+    <div class="sk-loading"><div class="sk-spinner"></div> Rezepte werden geladen...</div>
+}
+else if (recipes.Count == 0)
+{
+    <div class="sk-card">
+        <div class="sk-empty">
+            <div class="sk-empty-icon">📖</div>
+            <p>Noch keine Rezepte vorhanden</p>
+            <button class="sk-btn sk-btn-primary" style="margin-top:1rem;" @onclick="ShowAddModal">Erstes Rezept erstellen</button>
+        </div>
+    </div>
+}
+else
+{
+    <div style="margin-bottom: 1.25rem; display:flex; gap:0.4rem; flex-wrap:wrap;">
+        <button class="sk-btn @(filter == "" ? "sk-btn-primary" : "sk-btn-outline") sk-btn-sm" @onclick='() => filter = ""'>Alle</button>
+        @foreach (var cat in categories)
+        {
+            <button class="sk-btn @(filter == cat ? "sk-btn-primary" : "sk-btn-outline") sk-btn-sm" @onclick="() => filter = cat">@cat</button>
+        }
+    </div>
+
+    <div class="sk-recipe-grid">
+        @foreach (var recipe in FilteredRecipes)
+        {
+            <div class="sk-recipe-card" @onclick="() => ShowDetail(recipe)">
+                <div class="sk-recipe-banner" style="background: @GetBannerColor(recipe.Category);">
+                    @GetCategoryEmoji(recipe.Category)
+                </div>
+                <div class="sk-recipe-body">
+                    <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.3rem;">
+                        <div class="sk-recipe-name">@recipe.Name</div>
+                        <span class="sk-badge sk-badge-blue">@recipe.Difficulty</span>
+                    </div>
+                    <div class="sk-recipe-desc">@recipe.Description</div>
+                    <div class="sk-recipe-meta">
+                        <span>⏱️ @(recipe.PrepTimeMinutes + recipe.CookTimeMinutes) Min.</span>
+                        <span>👥 @recipe.Servings Port.</span>
+                        <span>💰 @recipe.EstimatedCost.ToString("N2") €</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (showDetail && selectedRecipe != null)
+{
+    <div class="sk-modal-backdrop" @onclick="CloseModals">
+        <div class="sk-modal" style="max-width:700px;" @onclick:stopPropagation>
+            <div class="sk-modal-header">
+                <span class="sk-modal-title">@selectedRecipe.Name</span>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="sk-btn sk-btn-outline sk-btn-sm" @onclick="() => EditRecipe(selectedRecipe)">✏️ Bearbeiten</button>
+                    <button class="sk-btn sk-btn-danger sk-btn-sm" @onclick="() => DeleteRecipe(selectedRecipe.Id)">🗑️</button>
+                    <button class="sk-btn-icon" @onclick="CloseModals">✕</button>
+                </div>
+            </div>
+            <div class="sk-modal-body">
+                <div style="display:flex; gap:0.75rem; margin-bottom:1.25rem; flex-wrap:wrap; align-items:center;">
+                    <span class="sk-badge sk-badge-blue">@selectedRecipe.Category</span>
+                    <span class="sk-badge sk-badge-green">@selectedRecipe.Difficulty</span>
+                    <span style="color:var(--text-secondary); font-size:0.85rem;">⏱️ Vorbereitung: @selectedRecipe.PrepTimeMinutes Min. | Kochen: @selectedRecipe.CookTimeMinutes Min.</span>
+                    <span style="color:var(--text-secondary); font-size:0.85rem;">👥 @selectedRecipe.Servings Portionen</span>
+                    <span style="color:var(--text-secondary); font-size:0.85rem;">💰 ca. @selectedRecipe.EstimatedCost.ToString("N2") €</span>
+                </div>
+
+                <p style="color:var(--text-secondary); margin-bottom:1.5rem; line-height:1.6;">@selectedRecipe.Description</p>
+
+                @if (selectedRecipe.Ingredients != null && selectedRecipe.Ingredients.Count > 0)
+                {
+                    <h4 style="margin-bottom:0.75rem; color:var(--text-primary);">🥕 Zutaten</h4>
+                    <table class="sk-table" style="margin-bottom:1.5rem;">
+                        <thead><tr><th>Zutat</th><th>Menge</th><th>Einheit</th></tr></thead>
+                        <tbody>
+                            @foreach (var ri in selectedRecipe.Ingredients)
+                            {
+                                <tr>
+                                    <td style="font-weight:500">@ri.Ingredient?.Name</td>
+                                    <td>@ri.Amount</td>
+                                    <td>@ri.Ingredient?.Unit</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <h4 style="margin-bottom:0.75rem; color:var(--text-primary);">📝 Zubereitung</h4>
+                <div style="white-space:pre-line; color:var(--text-secondary); line-height:1.8;">@selectedRecipe.Instructions</div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showForm)
+{
+    <div class="sk-modal-backdrop" @onclick="CloseModals">
+        <div class="sk-modal" @onclick:stopPropagation>
+            <div class="sk-modal-header">
+                <span class="sk-modal-title">@(editId == 0 ? "Neues Rezept" : "Rezept bearbeiten")</span>
+                <button class="sk-btn-icon" @onclick="CloseModals">✕</button>
+            </div>
+            <div class="sk-modal-body">
+                <div class="sk-form-group">
+                    <label class="sk-label">Name</label>
+                    <input class="sk-input" @bind="formName" placeholder="Rezeptname" />
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Beschreibung</label>
+                    <input class="sk-input" @bind="formDesc" placeholder="Kurze Beschreibung" />
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                    <div class="sk-form-group">
+                        <label class="sk-label">Kategorie</label>
+                        <select class="sk-select" @bind="formCategory">
+                            <option>Hauptgericht</option>
+                            <option>Vorspeise</option>
+                            <option>Frühstück</option>
+                            <option>Dessert</option>
+                            <option>Snack</option>
+                            <option>Suppe</option>
+                            <option>Salat</option>
+                            <option>Beilage</option>
+                        </select>
+                    </div>
+                    <div class="sk-form-group">
+                        <label class="sk-label">Schwierigkeit</label>
+                        <select class="sk-select" @bind="formDifficulty">
+                            <option>Einfach</option>
+                            <option>Mittel</option>
+                            <option>Schwer</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem;">
+                    <div class="sk-form-group">
+                        <label class="sk-label">Vorbereitungszeit (Min.)</label>
+                        <input class="sk-input" type="number" @bind="formPrep" />
+                    </div>
+                    <div class="sk-form-group">
+                        <label class="sk-label">Kochzeit (Min.)</label>
+                        <input class="sk-input" type="number" @bind="formCook" />
+                    </div>
+                    <div class="sk-form-group">
+                        <label class="sk-label">Portionen</label>
+                        <input class="sk-input" type="number" @bind="formServings" />
+                    </div>
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Geschätzte Kosten (€)</label>
+                    <input class="sk-input" type="number" step="0.5" @bind="formCost" />
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Zubereitung</label>
+                    <textarea class="sk-textarea" rows="5" @bind="formInstructions" placeholder="Schritt-für-Schritt Anleitung..."></textarea>
+                </div>
+            </div>
+            <div class="sk-modal-footer">
+                <button class="sk-btn sk-btn-outline" @onclick="CloseModals">Abbrechen</button>
+                <button class="sk-btn sk-btn-primary" @onclick="SaveRecipe">Speichern</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<RecipeDto>? recipes;
+    private RecipeDto? selectedRecipe;
+    private bool showDetail, showForm;
+    private string filter = "";
+    private List<string> categories = new();
+
+    private int editId;
+    private string formName = "", formDesc = "", formCategory = "Hauptgericht", formDifficulty = "Mittel", formInstructions = "";
+    private int formPrep, formCook, formServings = 4;
+    private decimal formCost;
+
+    private IEnumerable<RecipeDto> FilteredRecipes => string.IsNullOrEmpty(filter)
+        ? recipes!
+        : recipes!.Where(r => r.Category == filter);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRecipes();
+    }
+
+    private async Task LoadRecipes()
+    {
+        try
+        {
+            recipes = await Http.GetFromJsonAsync<List<RecipeDto>>("api/recipes") ?? new();
+            categories = recipes.Select(r => r.Category).Distinct().OrderBy(c => c).ToList();
+        }
+        catch
+        {
+            recipes = new();
+        }
+    }
+
+    private void ShowAddModal()
+    {
+        editId = 0;
+        formName = ""; formDesc = ""; formCategory = "Hauptgericht"; formDifficulty = "Mittel";
+        formInstructions = ""; formPrep = 15; formCook = 30; formServings = 4; formCost = 0;
+        showForm = true;
+    }
+
+    private void EditRecipe(RecipeDto r)
+    {
+        editId = r.Id;
+        formName = r.Name; formDesc = r.Description; formCategory = r.Category;
+        formDifficulty = r.Difficulty; formInstructions = r.Instructions;
+        formPrep = r.PrepTimeMinutes; formCook = r.CookTimeMinutes;
+        formServings = r.Servings; formCost = r.EstimatedCost;
+        showDetail = false;
+        showForm = true;
+    }
+
+    private async Task SaveRecipe()
+    {
+        var recipe = new
+        {
+            name = formName, description = formDesc, instructions = formInstructions,
+            prepTimeMinutes = formPrep, cookTimeMinutes = formCook, servings = formServings,
+            category = formCategory, difficulty = formDifficulty, imageUrl = "",
+            estimatedCost = formCost
+        };
+
+        if (editId == 0)
+            await Http.PostAsJsonAsync("api/recipes", recipe);
+        else
+            await Http.PutAsJsonAsync($"api/recipes/{editId}", recipe);
+
+        showForm = false;
+        await LoadRecipes();
+    }
+
+    private async Task DeleteRecipe(int id)
+    {
+        await Http.DeleteAsync($"api/recipes/{id}");
+        showDetail = false;
+        await LoadRecipes();
+    }
+
+    private void ShowDetail(RecipeDto r) { selectedRecipe = r; showDetail = true; }
+    private void CloseModals() { showDetail = false; showForm = false; }
+
+    private string GetBannerColor(string cat) => cat switch
+    {
+        "Hauptgericht" => "linear-gradient(135deg, #6c5ce7, #a29bfe)",
+        "Vorspeise" => "linear-gradient(135deg, #e17055, #fab1a0)",
+        "Frühstück" => "linear-gradient(135deg, #fdcb6e, #ffeaa7)",
+        "Dessert" => "linear-gradient(135deg, #a29bfe, #dfe6e9)",
+        "Suppe" => "linear-gradient(135deg, #74b9ff, #0984e3)",
+        "Salat" => "linear-gradient(135deg, #00cec9, #55efc4)",
+        _ => "linear-gradient(135deg, #636e72, #b2bec3)"
+    };
+
+    private string GetCategoryEmoji(string cat) => cat switch
+    {
+        "Hauptgericht" => "🍽️",
+        "Vorspeise" => "🥗",
+        "Frühstück" => "🥞",
+        "Dessert" => "🍰",
+        "Suppe" => "🍲",
+        "Salat" => "🥬",
+        "Snack" => "🍿",
+        _ => "🍴"
+    };
+
+    public class RecipeDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Instructions { get; set; } = "";
+        public int PrepTimeMinutes { get; set; }
+        public int CookTimeMinutes { get; set; }
+        public int Servings { get; set; }
+        public string Category { get; set; } = "";
+        public string Difficulty { get; set; } = "";
+        public string ImageUrl { get; set; } = "";
+        public decimal EstimatedCost { get; set; }
+        public List<RecipeIngredientDto> Ingredients { get; set; } = new();
+    }
+
+    public class RecipeIngredientDto
+    {
+        public int Id { get; set; }
+        public decimal Amount { get; set; }
+        public IngredientDto? Ingredient { get; set; }
+    }
+
+    public class IngredientDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Unit { get; set; } = "";
+    }
+}

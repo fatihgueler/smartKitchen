@@ -1,0 +1,184 @@
+﻿@page "/orders"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<div class="sk-page-header">
+    <div>
+        <h2 class="sk-page-title">🧾 Bestellungen</h2>
+        <p class="sk-page-subtitle">Alle Bestellungen verwalten</p>
+    </div>
+    <button class="sk-btn sk-btn-primary" @onclick="ShowAddModal">+ Neue Bestellung</button>
+</div>
+
+@if (orders == null)
+{
+    <div class="sk-loading"><div class="sk-spinner"></div> Bestellungen werden geladen...</div>
+}
+else if (orders.Count == 0)
+{
+    <div class="sk-card">
+        <div class="sk-empty">
+            <div class="sk-empty-icon">🧾</div>
+            <p>Noch keine Bestellungen vorhanden</p>
+            <button class="sk-btn sk-btn-primary" style="margin-top:1rem" @onclick="ShowAddModal">Erste Bestellung erstellen</button>
+        </div>
+    </div>
+}
+else
+{
+    <div class="sk-card">
+        <table class="sk-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Kunde</th>
+                    <th>Status</th>
+                    <th>Summe</th>
+                    <th>Erstellt am</th>
+                    <th>Notizen</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var order in orders)
+                {
+                    <tr>
+                        <td style="font-weight:700; color:var(--text-muted)">@order.Id</td>
+                        <td style="font-weight:600; color:var(--text-primary)">@order.CustomerName</td>
+                        <td>
+                            <span class="sk-badge @GetStatusBadge(order.Status)">@order.Status</span>
+                        </td>
+                        <td style="font-weight:700; color:var(--text-primary)">@order.TotalPrice.ToString("N2") €</td>
+                        <td>@order.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td style="max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@order.Notes</td>
+                        <td style="text-align:right">
+                            <button class="sk-btn-icon" title="Bearbeiten" @onclick="() => EditOrder(order)">✏️</button>
+                            <button class="sk-btn-icon" title="Löschen" @onclick="() => DeleteOrder(order.Id)">🗑️</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top:1.25rem; display:flex; gap:2rem; justify-content:center; color:var(--text-secondary); font-size:0.9rem">
+        <span>Gesamt: <strong style="color:var(--text-primary)">@orders.Count</strong> Bestellungen</span>
+        <span>Umsatz: <strong style="color:var(--text-primary)">@orders.Sum(o => o.TotalPrice).ToString("N2") €</strong></span>
+    </div>
+}
+
+@if (showForm)
+{
+    <div class="sk-modal-backdrop" @onclick="CloseForm">
+        <div class="sk-modal" style="max-width:500px" @onclick:stopPropagation>
+            <div class="sk-modal-header">
+                <span class="sk-modal-title">@(editId == 0 ? "Neue Bestellung" : "Bestellung bearbeiten")</span>
+                <button class="sk-btn-icon" @onclick="CloseForm">✕</button>
+            </div>
+            <div class="sk-modal-body">
+                <div class="sk-form-group">
+                    <label class="sk-label">Kundenname</label>
+                    <input class="sk-input" @bind="formName" placeholder="Name des Kunden" />
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem">
+                    <div class="sk-form-group">
+                        <label class="sk-label">Status</label>
+                        <select class="sk-select" @bind="formStatus">
+                            <option>Neu</option>
+                            <option>In Bearbeitung</option>
+                            <option>Fertig</option>
+                            <option>Storniert</option>
+                        </select>
+                    </div>
+                    <div class="sk-form-group">
+                        <label class="sk-label">Gesamtpreis (€)</label>
+                        <input class="sk-input" type="number" step="0.01" @bind="formPrice" />
+                    </div>
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Notizen</label>
+                    <textarea class="sk-textarea" rows="3" @bind="formNotes" placeholder="Besondere Wünsche..."></textarea>
+                </div>
+            </div>
+            <div class="sk-modal-footer">
+                <button class="sk-btn sk-btn-outline" @onclick="CloseForm">Abbrechen</button>
+                <button class="sk-btn sk-btn-primary" @onclick="SaveOrder">Speichern</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<OrderDto>? orders;
+    private bool showForm;
+    private int editId;
+    private string formName = "", formStatus = "Neu", formNotes = "";
+    private decimal formPrice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            orders = await Http.GetFromJsonAsync<List<OrderDto>>("api/orders") ?? new();
+        }
+        catch
+        {
+            orders = new();
+        }
+    }
+
+    private void ShowAddModal()
+    {
+        editId = 0; formName = ""; formStatus = "Neu"; formNotes = ""; formPrice = 0;
+        showForm = true;
+    }
+
+    private void EditOrder(OrderDto o)
+    {
+        editId = o.Id; formName = o.CustomerName; formStatus = o.Status; formNotes = o.Notes; formPrice = o.TotalPrice;
+        showForm = true;
+    }
+
+    private async Task SaveOrder()
+    {
+        var data = new { customerName = formName, status = formStatus, notes = formNotes, totalPrice = formPrice };
+        if (editId == 0)
+            await Http.PostAsJsonAsync("api/orders", data);
+        else
+            await Http.PutAsJsonAsync($"api/orders/{editId}", data);
+        showForm = false;
+        await LoadData();
+    }
+
+    private async Task DeleteOrder(int id)
+    {
+        await Http.DeleteAsync($"api/orders/{id}");
+        await LoadData();
+    }
+
+    private void CloseForm() { showForm = false; }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Neu" => "sk-badge-blue",
+        "In Bearbeitung" => "sk-badge-orange",
+        "Fertig" => "sk-badge-green",
+        "Storniert" => "sk-badge-red",
+        _ => "sk-badge-gray"
+    };
+
+    public class OrderDto
+    {
+        public int Id { get; set; }
+        public string CustomerName { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+        public decimal TotalPrice { get; set; }
+        public string Status { get; set; } = "";
+        public string Notes { get; set; } = "";
+    }
+}

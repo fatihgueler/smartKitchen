@@ -1,0 +1,188 @@
+﻿@page "/mealplan"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<div class="sk-page-header">
+    <div>
+        <h2 class="sk-page-title">📅 Wochenplan</h2>
+        <p class="sk-page-subtitle">Plane deine Mahlzeiten für die Woche</p>
+    </div>
+    <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button class="sk-btn sk-btn-outline sk-btn-sm" @onclick="PrevWeek">← Vorherige</button>
+        <span style="font-weight:700; min-width:200px; text-align:center; color:var(--text-primary); font-size:0.9rem;">
+            @weekStart.ToString("dd.MM.") – @weekStart.AddDays(6).ToString("dd.MM.yyyy")
+        </span>
+        <button class="sk-btn sk-btn-outline sk-btn-sm" @onclick="NextWeek">Nächste →</button>
+        <button class="sk-btn sk-btn-primary sk-btn-sm" @onclick="ShowAddModal">+ Mahlzeit</button>
+    </div>
+</div>
+
+@if (plans == null)
+{
+    <div class="sk-loading"><div class="sk-spinner"></div> Wochenplan wird geladen...</div>
+}
+else
+{
+    <div class="sk-week-grid">
+        @for (int i = 0; i < 7; i++)
+        {
+            var day = weekStart.AddDays(i);
+            var dayPlans = plans.Where(p => p.Date.Date == day.Date).ToList();
+            var isToday = day.Date == DateTime.Today;
+            var headerCss = GetHeaderCss(isToday);
+            <div class="sk-day-card">
+                <div class="@headerCss">
+                    @day.ToString("ddd", new System.Globalization.CultureInfo("de-DE"))
+                    <br />
+                    <span style="font-size:0.7rem; font-weight:400;">@day.ToString("dd.MM.")</span>
+                </div>
+                <div class="sk-day-body">
+                    @foreach (var plan in dayPlans)
+                    {
+                        var mealCss = "sk-meal-item " + GetMealClass(plan.MealType);
+                        <div class="@mealCss" @onclick="() => DeleteMeal(plan.Id)" style="cursor:pointer" title="Klicken zum Löschen">
+                            <div class="sk-meal-type">@plan.MealType</div>
+                            <div class="sk-meal-name">@plan.Recipe?.Name</div>
+                            @if (plan.Servings > 0)
+                            {
+                                <div style="font-size:0.7rem; color:var(--text-muted)">👥 @plan.Servings Port.</div>
+                            }
+                        </div>
+                    }
+                    <button class="sk-btn-icon" style="width:100%; margin-top:0.25rem; font-size:0.8rem; color:var(--text-muted)" @onclick="() => ShowAddForDay(day)">+</button>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (showForm)
+{
+    <div class="sk-modal-backdrop" @onclick="CloseForm">
+        <div class="sk-modal" style="max-width:450px" @onclick:stopPropagation>
+            <div class="sk-modal-header">
+                <span class="sk-modal-title">Mahlzeit planen</span>
+                <button class="sk-btn-icon" @onclick="CloseForm">✕</button>
+            </div>
+            <div class="sk-modal-body">
+                <div class="sk-form-group">
+                    <label class="sk-label">Datum</label>
+                    <input class="sk-input" type="date" @bind="formDate" />
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Mahlzeit</label>
+                    <select class="sk-select" @bind="formMealType">
+                        <option>Frühstück</option>
+                        <option>Mittagessen</option>
+                        <option>Abendessen</option>
+                    </select>
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Rezept</label>
+                    <select class="sk-select" @bind="formRecipeId">
+                        <option value="0">-- Rezept wählen --</option>
+                        @if (allRecipes != null)
+                        {
+                            @foreach (var r in allRecipes)
+                            {
+                                <option value="@r.Id">@r.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="sk-form-group">
+                    <label class="sk-label">Portionen</label>
+                    <input class="sk-input" type="number" @bind="formServings" />
+                </div>
+            </div>
+            <div class="sk-modal-footer">
+                <button class="sk-btn sk-btn-outline" @onclick="CloseForm">Abbrechen</button>
+                <button class="sk-btn sk-btn-primary" @onclick="SaveMeal">Speichern</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<MealPlanDto>? plans;
+    private List<RecipeListDto>? allRecipes;
+    private DateTime weekStart;
+    private bool showForm;
+
+    private DateTime formDate = DateTime.Today;
+    private string formMealType = "Mittagessen";
+    private int formRecipeId;
+    private int formServings = 4;
+
+    protected override async Task OnInitializedAsync()
+    {
+        weekStart = GetMonday(DateTime.Today);
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var dateStr = weekStart.ToString("yyyy-MM-dd");
+            plans = await Http.GetFromJsonAsync<List<MealPlanDto>>($"api/mealplans/week?startDate={dateStr}") ?? new();
+            allRecipes ??= await Http.GetFromJsonAsync<List<RecipeListDto>>("api/recipes") ?? new();
+        }
+        catch
+        {
+            plans = new();
+        }
+    }
+
+    private async Task SaveMeal()
+    {
+        if (formRecipeId == 0) return;
+        var meal = new { date = formDate, mealType = formMealType, recipeId = formRecipeId, servings = formServings, notes = "" };
+        await Http.PostAsJsonAsync("api/mealplans", meal);
+        showForm = false;
+        await LoadData();
+    }
+
+    private async Task DeleteMeal(int id)
+    {
+        await Http.DeleteAsync($"api/mealplans/{id}");
+        await LoadData();
+    }
+
+    private void ShowAddModal() { formDate = DateTime.Today; showForm = true; }
+    private void ShowAddForDay(DateTime day) { formDate = day; showForm = true; }
+    private void CloseForm() { showForm = false; }
+    private async Task PrevWeek() { weekStart = weekStart.AddDays(-7); await LoadData(); }
+    private async Task NextWeek() { weekStart = weekStart.AddDays(7); await LoadData(); }
+
+    private static DateTime GetMonday(DateTime date)
+    {
+        var diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
+        return date.AddDays(-diff).Date;
+    }
+
+    private string GetHeaderCss(bool isToday) => isToday ? "sk-day-header today" : "sk-day-header";
+
+    private string GetMealClass(string t) => t switch
+    {
+        "Frühstück" => "breakfast",
+        "Mittagessen" => "lunch",
+        "Abendessen" => "dinner",
+        _ => ""
+    };
+
+    public class MealPlanDto
+    {
+        public int Id { get; set; }
+        public DateTime Date { get; set; }
+        public string MealType { get; set; } = "";
+        public int Servings { get; set; }
+        public RecipeListDto? Recipe { get; set; }
+    }
+
+    public class RecipeListDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+    }
+}

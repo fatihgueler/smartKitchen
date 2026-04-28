@@ -1,0 +1,21 @@
+**/bin/
+**/obj/
+/packages/
+
+# Rider / IntelliJ
+.idea/
+*.iml
+riderModule.iml
+/_ReSharper.Caches/
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Local database files
+*.db
+*.db-shm
+*.db-wal

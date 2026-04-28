@@ -1,0 +1,75 @@
+﻿.sk-app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.sk-content {
+    flex: 1;
+    padding-top: 80px;
+}
+
+.sk-content-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2.5rem 3rem;
+    animation: pageIn 0.5s ease-out;
+}
+
+@keyframes pageIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.sk-footer {
+    padding: 2rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sk-footer-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.sk-footer-dot {
+    opacity: 0.4;
+}
+
+#blazor-error-ui {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 10000;
+    display: none;
+}
+
+#blazor-error-ui .reload {
+    color: white;
+    font-weight: 700;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    float: right;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .sk-content-inner {
+        padding: 1.5rem 1.25rem;
+    }
+    .sk-footer-inner {
+        padding: 0 1.25rem;
+    }
+}

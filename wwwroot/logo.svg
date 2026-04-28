@@ -1,0 +1,86 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c5ce7"/>
+      <stop offset="50%" style="stop-color:#a29bfe"/>
+      <stop offset="100%" style="stop-color:#74b9ff"/>
+    </linearGradient>
+    <linearGradient id="potGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95"/>
+      <stop offset="100%" style="stop-color:#dfe6e9;stop-opacity:0.9"/>
+    </linearGradient>
+    <linearGradient id="steamGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="chipGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00cec9"/>
+      <stop offset="100%" style="stop-color:#55efc4"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGrad)" filter="url(#shadow)"/>
+  <circle cx="256" cy="256" r="220" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
+  
+  <!-- Cooking pot body -->
+  <rect x="140" y="230" width="232" height="140" rx="20" ry="20" fill="url(#potGrad)" filter="url(#shadow)"/>
+  
+  <!-- Pot rim -->
+  <rect x="125" y="220" width="262" height="25" rx="12" ry="12" fill="#ffffff" opacity="0.95"/>
+  
+  <!-- Pot handles -->
+  <rect x="100" y="225" width="35" height="14" rx="7" ry="7" fill="#dfe6e9"/>
+  <rect x="377" y="225" width="35" height="14" rx="7" ry="7" fill="#dfe6e9"/>
+  
+  <!-- Steam lines -->
+  <path d="M200 200 Q205 175 200 150 Q195 125 200 100" stroke="url(#steamGrad)" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.7">
+    <animate attributeName="d" values="M200 200 Q205 175 200 150 Q195 125 200 100;M200 200 Q210 175 200 150 Q190 125 200 95;M200 200 Q205 175 200 150 Q195 125 200 100" dur="3s" repeatCount="indefinite"/>
+  </path>
+  <path d="M256 195 Q261 165 256 140 Q251 115 256 85" stroke="url(#steamGrad)" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.8">
+    <animate attributeName="d" values="M256 195 Q261 165 256 140 Q251 115 256 85;M256 195 Q266 165 256 140 Q246 115 256 80;M256 195 Q261 165 256 140 Q251 115 256 85" dur="2.5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M312 200 Q317 175 312 150 Q307 125 312 100" stroke="url(#steamGrad)" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.6">
+    <animate attributeName="d" values="M312 200 Q317 175 312 150 Q307 125 312 100;M312 200 Q322 175 312 150 Q302 125 312 95;M312 200 Q317 175 312 150 Q307 125 312 100" dur="3.5s" repeatCount="indefinite"/>
+  </path>
+  
+  <!-- Smart chip/circuit on pot -->
+  <rect x="220" y="275" width="72" height="45" rx="8" ry="8" fill="url(#chipGrad)" opacity="0.9"/>
+  <!-- Circuit lines -->
+  <line x1="235" y1="297" x2="220" y2="297" stroke="#00cec9" stroke-width="2" opacity="0.7"/>
+  <line x1="277" y1="297" x2="292" y2="297" stroke="#00cec9" stroke-width="2" opacity="0.7"/>
+  <line x1="256" y1="275" x2="256" y2="265" stroke="#00cec9" stroke-width="2" opacity="0.7"/>
+  <line x1="256" y1="320" x2="256" y2="330" stroke="#00cec9" stroke-width="2" opacity="0.7"/>
+  <!-- Chip detail -->
+  <rect x="240" y="287" width="32" height="20" rx="3" ry="3" fill="#0a0a0f" opacity="0.5"/>
+  <circle cx="250" cy="297" r="3" fill="#55efc4" filter="url(#glow)">
+    <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="262" cy="297" r="3" fill="#55efc4" filter="url(#glow)">
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <!-- WiFi symbol above pot -->
+  <g transform="translate(256,120)" opacity="0.9" filter="url(#glow)">
+    <path d="M-20,5 A28,28 0 0,1 20,5" stroke="#55efc4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M-13,0 A18,18 0 0,1 13,0" stroke="#55efc4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M-6,-5 A8,8 0 0,1 6,-5" stroke="#55efc4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="0" cy="-8" r="3" fill="#55efc4"/>
+  </g>
+  
+  <!-- Decorative dots -->
+  <circle cx="100" cy="400" r="4" fill="rgba(255,255,255,0.3)"/>
+  <circle cx="420" cy="130" r="3" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="380" cy="410" r="5" fill="rgba(255,255,255,0.2)"/>
+  <circle cx="130" cy="140" r="3" fill="rgba(255,255,255,0.25)"/>
+</svg>

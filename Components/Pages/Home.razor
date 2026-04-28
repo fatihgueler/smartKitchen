@@ -1,0 +1,213 @@
+﻿@page "/"
+@inject HttpClient Http
+@rendermode InteractiveServer
+
+<!-- Hero Section -->
+<div class="sk-hero">
+    <div class="sk-hero-bg"></div>
+    <div class="sk-hero-content">
+        <img src="logo.svg" alt="SmartKitchen" class="sk-hero-logo" />
+        <h1 class="sk-hero-title">Willkommen in deiner <span class="sk-gradient-text">SmartKitchen</span></h1>
+        <p class="sk-hero-subtitle">Dein intelligenter Küchenassistent — alles im Griff, von Rezepten bis zum Einkauf</p>
+        <div class="sk-hero-date">
+            📅 @DateTime.Now.ToString("dddd, dd. MMMM yyyy", new System.Globalization.CultureInfo("de-DE"))
+        </div>
+    </div>
+</div>
+
+@if (stats == null)
+{
+    <div class="sk-loading"><div class="sk-spinner"></div> Dashboard wird geladen...</div>
+}
+else
+{
+    <!-- Stat Cards mit farbigen Gradienten -->
+    <div class="sk-grid sk-grid-4" style="margin-bottom: 2.5rem;">
+        <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #6c5ce7, #a29bfe); --stat-glow: rgba(108,92,231,0.3);">
+            <div class="sk-stat-colored-icon">📖</div>
+            <div class="sk-stat-colored-value">@stats.TotalRecipes</div>
+            <div class="sk-stat-colored-label">Rezepte</div>
+            <div class="sk-stat-colored-decoration"></div>
+        </div>
+        <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #00cec9, #55efc4); --stat-glow: rgba(0,206,201,0.3);">
+            <div class="sk-stat-colored-icon">📦</div>
+            <div class="sk-stat-colored-value">@stats.InventoryItems</div>
+            <div class="sk-stat-colored-label">Lagerartikel</div>
+            <div class="sk-stat-colored-decoration"></div>
+        </div>
+        <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #fdcb6e, #f39c12); --stat-glow: rgba(253,203,110,0.3);">
+            <div class="sk-stat-colored-icon">⚠️</div>
+            <div class="sk-stat-colored-value">@stats.LowStockCount</div>
+            <div class="sk-stat-colored-label">Niedriger Bestand</div>
+            <div class="sk-stat-colored-decoration"></div>
+        </div>
+        <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #ff6b6b, #ee5a24); --stat-glow: rgba(255,107,107,0.3);">
+            <div class="sk-stat-colored-icon">🛒</div>
+            <div class="sk-stat-colored-value">@stats.ShoppingItemsCount</div>
+            <div class="sk-stat-colored-label">Einkaufsliste</div>
+            <div class="sk-stat-colored-decoration"></div>
+        </div>
+    </div>
+
+    <!-- Haupt-Inhalte -->
+    <div class="sk-grid sk-grid-2" style="margin-bottom: 2.5rem;">
+        <div class="sk-card sk-card-accent" style="--card-accent: #6c5ce7;">
+            <div class="sk-card-header">
+                <span class="sk-card-title">📅 Heutige Mahlzeiten</span>
+            </div>
+            @if (stats.TodaysMeals != null && stats.TodaysMeals.Count > 0)
+            {
+                @foreach (var meal in stats.TodaysMeals)
+                {
+                    <div class="sk-meal-item @GetMealClass(meal.MealType)" style="margin-bottom: 0.5rem;">
+                        <div class="sk-meal-type">@meal.MealType</div>
+                        <div class="sk-meal-name">@meal.Recipe?.Name</div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="sk-empty">
+                    <div class="sk-empty-icon">🍽️</div>
+                    <p style="color:var(--text-secondary); margin-bottom:0.5rem;">Keine Mahlzeiten für heute geplant</p>
+                    <a href="mealplan" class="sk-btn sk-btn-primary sk-btn-sm">Wochenplan öffnen</a>
+                </div>
+            }
+        </div>
+
+        <div class="sk-card sk-card-accent" style="--card-accent: #00cec9;">
+            <div class="sk-card-header">
+                <span class="sk-card-title">🧾 Letzte Bestellungen</span>
+                <a href="orders" class="sk-btn sk-btn-outline sk-btn-sm">Alle anzeigen</a>
+            </div>
+            @if (stats.RecentOrders != null && stats.RecentOrders.Count > 0)
+            {
+                <table class="sk-table">
+                    <thead>
+                        <tr>
+                            <th>Kunde</th>
+                            <th>Status</th>
+                            <th>Summe</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in stats.RecentOrders)
+                        {
+                            <tr>
+                                <td style="font-weight:600; color:var(--text-primary)">@order.CustomerName</td>
+                                <td><span class="sk-badge @GetStatusBadge(order.Status)">@order.Status</span></td>
+                                <td style="font-weight:600; color:var(--success)">@order.TotalPrice.ToString("N2") €</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div class="sk-empty">
+                    <div class="sk-empty-icon">📋</div>
+                    <p style="color:var(--text-secondary);">Noch keine Bestellungen vorhanden</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Quick-Links mit farbigen Gradienten -->
+    <h3 style="color:var(--text-primary); margin-bottom:1.25rem; font-size:1.2rem; font-weight:700;">⚡ Schnellzugriff</h3>
+    <div class="sk-grid sk-grid-3" style="margin-bottom:2rem;">
+        <a href="recipes" class="sk-quick-link" style="--ql-gradient: linear-gradient(135deg, #6c5ce7, #a29bfe);">
+            <div class="sk-quick-link-icon">📖</div>
+            <h3>Rezepte</h3>
+            <p>@stats.TotalRecipes Rezepte entdecken</p>
+        </a>
+        <a href="mealplan" class="sk-quick-link" style="--ql-gradient: linear-gradient(135deg, #00cec9, #55efc4);">
+            <div class="sk-quick-link-icon">📅</div>
+            <h3>Wochenplan</h3>
+            <p>Mahlzeiten für die Woche planen</p>
+        </a>
+        <a href="shopping" class="sk-quick-link" style="--ql-gradient: linear-gradient(135deg, #fdcb6e, #f39c12);">
+            <div class="sk-quick-link-icon">🛒</div>
+            <h3>Einkaufsliste</h3>
+            <p>@stats.ShoppingItemsCount offene Artikel</p>
+        </a>
+        <a href="inventory" class="sk-quick-link" style="--ql-gradient: linear-gradient(135deg, #74b9ff, #0984e3);">
+            <div class="sk-quick-link-icon">📦</div>
+            <h3>Inventar</h3>
+            <p>Lagerbestand verwalten</p>
+        </a>
+        <a href="ingredients" class="sk-quick-link" style="--ql-gradient: linear-gradient(135deg, #ff6b6b, #ee5a24);">
+            <div class="sk-quick-link-icon">🥕</div>
+            <h3>Zutaten</h3>
+            <p>@stats.TotalIngredients Zutaten verwalten</p>
+        </a>
+        <a href="orders" class="sk-quick-link" style="--ql-gradient: linear-gradient(135deg, #e17055, #d63031);">
+            <div class="sk-quick-link-icon">🧾</div>
+            <h3>Bestellungen</h3>
+            <p>@stats.TotalOrders Bestellungen</p>
+        </a>
+    </div>
+}
+
+@code {
+    private DashboardStats? stats;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            stats = await Http.GetFromJsonAsync<DashboardStats>("api/dashboard");
+        }
+        catch
+        {
+            stats = new DashboardStats();
+        }
+    }
+
+    private string GetMealClass(string mealType) => mealType switch
+    {
+        "Frühstück" => "breakfast",
+        "Mittagessen" => "lunch",
+        "Abendessen" => "dinner",
+        _ => ""
+    };
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Neu" => "sk-badge-blue",
+        "In Bearbeitung" => "sk-badge-orange",
+        "Fertig" => "sk-badge-green",
+        "Storniert" => "sk-badge-red",
+        _ => "sk-badge-gray"
+    };
+
+    public class DashboardStats
+    {
+        public int TotalRecipes { get; set; }
+        public int TotalIngredients { get; set; }
+        public int TotalOrders { get; set; }
+        public int LowStockCount { get; set; }
+        public int ExpiringCount { get; set; }
+        public List<MealPlanDto> TodaysMeals { get; set; } = new();
+        public int ShoppingItemsCount { get; set; }
+        public List<OrderDto> RecentOrders { get; set; } = new();
+        public int InventoryItems { get; set; }
+    }
+
+    public class MealPlanDto
+    {
+        public string MealType { get; set; } = "";
+        public RecipeDto? Recipe { get; set; }
+    }
+
+    public class RecipeDto
+    {
+        public string Name { get; set; } = "";
+    }
+
+    public class OrderDto
+    {
+        public string CustomerName { get; set; } = "";
+        public string Status { get; set; } = "";
+        public decimal TotalPrice { get; set; }
+    }
+}
