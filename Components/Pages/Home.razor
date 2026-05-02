@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject HttpClient Http
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <!-- Hero Section -->
@@ -8,7 +9,7 @@
     <div class="sk-hero-content">
         <img src="logo.svg" alt="SmartKitchen" class="sk-hero-logo" />
         <h1 class="sk-hero-title">Willkommen in deiner <span class="sk-gradient-text">SmartKitchen</span></h1>
-        <p class="sk-hero-subtitle">Dein intelligenter Küchenassistent — alles im Griff, von Rezepten bis zum Einkauf</p>
+        <p class="sk-hero-subtitle" data-typewriter="Dein intelligenter Küchenassistent — alles im Griff, von Rezepten bis zum Einkauf"></p>
         <div class="sk-hero-date">
             📅 @DateTime.Now.ToString("dddd, dd. MMMM yyyy", new System.Globalization.CultureInfo("de-DE"))
         </div>
@@ -25,25 +26,25 @@ else
     <div class="sk-grid sk-grid-4" style="margin-bottom: 2.5rem;">
         <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #6c5ce7, #a29bfe); --stat-glow: rgba(108,92,231,0.3);">
             <div class="sk-stat-colored-icon">📖</div>
-            <div class="sk-stat-colored-value">@stats.TotalRecipes</div>
+            <div class="sk-stat-colored-value" data-countup="@stats.TotalRecipes">0</div>
             <div class="sk-stat-colored-label">Rezepte</div>
             <div class="sk-stat-colored-decoration"></div>
         </div>
         <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #00cec9, #55efc4); --stat-glow: rgba(0,206,201,0.3);">
             <div class="sk-stat-colored-icon">📦</div>
-            <div class="sk-stat-colored-value">@stats.InventoryItems</div>
+            <div class="sk-stat-colored-value" data-countup="@stats.InventoryItems">0</div>
             <div class="sk-stat-colored-label">Lagerartikel</div>
             <div class="sk-stat-colored-decoration"></div>
         </div>
         <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #fdcb6e, #f39c12); --stat-glow: rgba(253,203,110,0.3);">
             <div class="sk-stat-colored-icon">⚠️</div>
-            <div class="sk-stat-colored-value">@stats.LowStockCount</div>
+            <div class="sk-stat-colored-value" data-countup="@stats.LowStockCount">0</div>
             <div class="sk-stat-colored-label">Niedriger Bestand</div>
             <div class="sk-stat-colored-decoration"></div>
         </div>
         <div class="sk-stat-colored" style="--stat-gradient: linear-gradient(135deg, #ff6b6b, #ee5a24); --stat-glow: rgba(255,107,107,0.3);">
             <div class="sk-stat-colored-icon">🛒</div>
-            <div class="sk-stat-colored-value">@stats.ShoppingItemsCount</div>
+            <div class="sk-stat-colored-value" data-countup="@stats.ShoppingItemsCount">0</div>
             <div class="sk-stat-colored-label">Einkaufsliste</div>
             <div class="sk-stat-colored-decoration"></div>
         </div>
@@ -150,6 +151,7 @@ else
 
 @code {
     private DashboardStats? stats;
+    private bool _effectsRun = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -160,6 +162,17 @@ else
         catch
         {
             stats = new DashboardStats();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (stats != null && !_effectsRun)
+        {
+            _effectsRun = true;
+            await JS.InvokeVoidAsync("SK.countUp", "[data-countup]", 1400);
+            await JS.InvokeVoidAsync("SK.initTilt");
+            await JS.InvokeVoidAsync("SK.initTypewriter");
         }
     }
 

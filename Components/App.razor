@@ -12,7 +12,14 @@
     <HeadOutlet/>
 </head>
 <body>
+<div class="sk-grain-overlay" aria-hidden="true"></div>
 <Routes/>
 <script src="_framework/blazor.web.js"></script>
+<script src="effects.js" defer></script>
+<script>
+    document.addEventListener('enhancedload', function () {
+        if (window.SK) window.SK.init();
+    });
+</script>
 </body>
 </html>

@@ -88,10 +88,11 @@
     bottom: -1px;
     left: 50%;
     transform: translateX(-50%);
-    width: 20px;
+    width: 24px;
     height: 2px;
-    background: linear-gradient(90deg, #6c5ce7, #a29bfe);
+    background: linear-gradient(90deg, var(--neon-cyan), var(--accent-primary), var(--neon-pink));
     border-radius: 1px;
+    box-shadow: 0 0 8px var(--neon-cyan-glow), 0 0 16px var(--accent-glow);
 }
 
 .sk-nav-emoji {
